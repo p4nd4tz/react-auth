@@ -54,5 +54,6 @@ export const authSlice = createSlice({
                 state.loggedInUserToken = null;
             })
     }
-
 })
+
+export default authSlice.reducer;
