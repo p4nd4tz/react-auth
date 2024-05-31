@@ -1,8 +1,11 @@
 import { useForm } from 'react-hook-form';
+import { useDispatch } from 'react-redux';
+import { loginUserAsync } from '../authSlice';
 
 export default function Example() {
+    const dispatch = useDispatch();
     const { register, handleSubmit, formState: { errors } } = useForm();
-    const onSubmit = data => console.log(data);
+    const onSubmit = data => dispatch(loginUserAsync());
 
     return (
         <>

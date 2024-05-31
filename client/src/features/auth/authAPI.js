@@ -1,7 +1,7 @@
 export function loginUser(loginInfo) {
     return new Promise(async (resolve, reject) => {
         try {
-            const response = await fetch('http://localhost:3000/login', {
+            const response = await fetch('http://localhost:4000/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -25,7 +25,7 @@ export function loginUser(loginInfo) {
 export function logout(userId) {
     return new Promise(async (resolve, reject) => {
         try {
-            const response = await fetch(`http://localhost:3000/logout`)
+            const response = await fetch(`http://localhost:4000/logout`)
             if (response.ok) {
                 resolve({ data: 'success' })
             } else {
