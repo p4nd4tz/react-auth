@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
   createBrowserRouter,
   RouterProvider,
@@ -7,6 +7,8 @@ import Products from './pages/Products';
 import HomePage from './pages/Home';
 import Navbar from './pages/Navbar';
 import SignIn from './pages/SignIn';
+import { useDispatch, useSelector } from 'react-redux';
+import { checkAuthAsync, selectUserChecked } from './features/auth/authSlice';
 
 const router = createBrowserRouter([
   {
@@ -18,19 +20,23 @@ const router = createBrowserRouter([
       { path: "/auth/signin", element: <SignIn /> }
     ]
   },
-  // {
-  //   path: "/auth",
-  //   children: [
-  //     { index: true, element: <SignIn /> },
-  //     { path: "signin", element: <SignIn /> },
-  //     // { path: "/signup", element: <SignUp /> },
-  //   ]
-  // }
 ]);
 
+
 function App() {
+  const dispatch = useDispatch();
+  const userChecked = useSelector(selectUserChecked);
+
+  useEffect(() => {
+    dispatch(checkAuthAsync());
+  }, [dispatch]);
+
   return (
-    <RouterProvider router={router} />
+    <div className='App'>
+      {userChecked && (
+        <RouterProvider router={router} />
+      )}
+    </div>
   );
 }
 

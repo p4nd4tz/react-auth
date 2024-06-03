@@ -1,52 +1,93 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const passport = require('passport');
-var LocalStrategy = require('passport-local');
+const LocalStrategy = require('passport-local').Strategy;
+const JwtStrategy = require('passport-jwt').Strategy;
+const ExtractJwt = require('passport-jwt').ExtractJwt;
 const authRouter = require('./routes/Auth');
+const { sanitizeUser, cookieExtractor } = require('./services/common');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
+
 
 const app = express();
 
-app.use(express.json());
+app.use(cookieParser());
+app.use(
+    session({
+        secret: process.env.JWT_SECRET_KEY,
+        resave: false,
+        saveUninitialized: false,
+    })
+)
+app.use(passport.authenticate('session'))
 app.use(
     cors({
         origin: '*',
         credentials: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-        // preflightContinue: false,
-        // optionsSuccessStatus: 204,
         allowedHeaders: ['Content-Type', 'Authorization'],
         exposedHeaders: ['Content-Type', 'Authorization']
     })
-)
+);
+app.use(express.json());
 
 app.use('/auth', authRouter.router);
 
-passport.use(new LocalStrategy(function verify(email, password, cb) {
-    if (email === 'admin@gmail.com' && password === 'admin') {
-        return cb(null, {
-            id: 1,
-            username: 'admin',
-            password: 'admin'
-        });
-    }
-    else {
-        return cb(null, false, { message: 'Incorrect username or password.' });
-    }
+passport.use(
+    'local',
+    new LocalStrategy({ usernameField: 'email' }, async function (
+        email,
+        password,
+        done
+    ) {
+        // by default passport uses username
+        try {
+            if (email !== 'admin@gmail.com' || password !== 'admin')
+                return done(null, false, { message: 'Invalid username or password.' });
 
-    // db.get('SELECT * FROM users WHERE username = ?', [username], function (err, user) {
-    //     if (err) { return cb(err); }
-    //     if (!user) { return cb(null, false, { message: 'Incorrect username or password.' }); }
+            const token = jwt.sign(sanitizeUser({ id: 1, role: 'admin' }), process.env.JWT_SECRET_KEY);
+            return done(null, { id: 1, role: 'admin', token }); // this lines sends to serializer
+        } catch (err) {
+            done(err);
+        }
+    })
+);
 
-    //     crypto.pbkdf2(password, user.salt, 310000, 32, 'sha256', function (err, hashedPassword) {
-    //         if (err) { return cb(err); }
-    //         if (!crypto.timingSafeEqual(user.hashed_password, hashedPassword)) {
-    //             return cb(null, false, { message: 'Incorrect username or password.' });
-    //         }
-    //         return cb(null, user);
-    //     });
-    // });
-}));
+const opts = {};
+opts.jwtFromRequest = cookieExtractor;
+opts.secretOrKey = process.env.JWT_SECRET_KEY;
+passport.use(
+    'jwt',
+    new JwtStrategy(opts, async function (jwt_payload, done) {
+        try {
+            return done(null, { id: 1, role: 'admin' });
+            // const user = await User.findById(jwt_payload.id);
+            // if (user) {
+            //     return done(null, sanitizeUser(user)); // this calls serializer
+            // } else {
+            //     return done(null, false);
+            // }
+        } catch (err) {
+            console.log(err);
+            return done(err, false);
+        }
+    })
+);
+
+passport.serializeUser(function (user, cb) {
+    process.nextTick(function () {
+        return cb(null, user)
+    })
+});
+
+passport.deserializeUser(function (user, cb) {
+    process.nextTick(function () {
+        return cb(null, user);
+    })
+})
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

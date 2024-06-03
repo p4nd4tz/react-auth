@@ -1,11 +1,15 @@
 import { useForm } from 'react-hook-form';
-import { useDispatch } from 'react-redux';
-import { loginUserAsync } from '../authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUserAsync, selectError } from '../authSlice';
 
 export default function Example() {
     const dispatch = useDispatch();
     const { register, handleSubmit, formState: { errors } } = useForm();
-    const onSubmit = data => dispatch(loginUserAsync());
+    const loginError = useSelector(selectError);
+
+    const onSubmit = data => {
+        dispatch(loginUserAsync({ email: data.email, password: data.password }));
+    }
 
     return (
         <>
@@ -74,6 +78,9 @@ export default function Example() {
                             </div>
                         </div>
 
+                        <div>
+                            {loginError && <span role="alert" className="text-red-500">error</span>}
+                        </div>
                         <div>
                             <button
                                 type="submit"
